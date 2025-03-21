@@ -1,0 +1,46 @@
+2025-03-12 22:26:12,302 - main - INFO - Logging configured with level: INFO
+2025-03-12 22:26:12,754 - main - INFO - Logging configured with level: INFO
+2025-03-12 22:26:12,781 - main - INFO - Logging configured with level: INFO
+2025-03-13 12:57:55,411 - main - INFO - Logging configured with level: INFO
+2025-03-13 12:57:55,865 - main - INFO - Logging configured with level: INFO
+2025-03-13 12:57:55,893 - main - INFO - Logging configured with level: INFO
+2025-03-13 13:15:46,505 - main - INFO - Logging configured with level: INFO
+2025-03-13 13:15:46,540 - main - INFO - Logging configured with level: INFO
+2025-03-13 13:17:19,045 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/rupload_igphoto/1741852036787_0_9492112579 (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:23,053 - instagrapi - INFO - https://i.instagram.com/api/v1/media/configure/
+2025-03-13 13:17:27,691 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/api/v1/media/configure/ (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:28,696 - instagrapi - INFO - https://i.instagram.com/api/v1/qe/expose/
+2025-03-13 13:17:29,147 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/api/v1/qe/expose/ (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:30,192 - instagrapi - INFO - https://i.instagram.com/api/v1/feed/timeline/
+2025-03-13 13:17:32,479 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/api/v1/feed/timeline/ (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:33,983 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/rupload_igphoto/1741852052483_0_5168858532 (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:37,991 - instagrapi - INFO - https://i.instagram.com/api/v1/media/configure/
+2025-03-13 13:17:41,626 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/api/v1/media/configure/ (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:42,632 - instagrapi - INFO - https://i.instagram.com/api/v1/qe/expose/
+2025-03-13 13:17:43,018 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/api/v1/qe/expose/ (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:44,061 - instagrapi - INFO - https://i.instagram.com/api/v1/feed/timeline/
+2025-03-13 13:17:45,297 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/api/v1/feed/timeline/ (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:46,687 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/rupload_igphoto/1741852065299_0_9834155552 (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:50,698 - instagrapi - INFO - https://i.instagram.com/api/v1/media/configure/
+2025-03-13 13:17:53,711 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/api/v1/media/configure/ (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 13:17:54,717 - instagrapi - INFO - https://i.instagram.com/api/v1/qe/expose/
+2025-03-13 13:17:55,190 - private_request - INFO - yourcoolaibro [200] POST https://i.instagram.com/api/v1/qe/expose/ (269.0.0.18.75, OnePlus 6T Dev)
+2025-03-13 15:01:31,734 - main - INFO - Logging configured with level: INFO
+2025-03-13 15:01:31,768 - main - INFO - Logging configured with level: INFO
+2025-03-13 15:01:51,425 - main - INFO - Logging configured with level: INFO
+2025-03-13 15:01:51,450 - main - INFO - Logging configured with level: INFO
+2025-03-13 15:02:00,941 - main - INFO - Logging configured with level: INFO
+2025-03-13 15:02:00,965 - main - INFO - Logging configured with level: INFO
+2025-03-13 15:02:16,761 - main - INFO - Logging configured with level: INFO
+2025-03-13 15:02:16,784 - main - INFO - Logging configured with level: INFO
+2025-03-17 17:12:34,625 - main - INFO - Logging configured with level: DEBUG
+2025-03-17 17:12:35,081 - main - INFO - Logging configured with level: DEBUG
+2025-03-17 17:12:35,098 - asyncio - DEBUG - Using selector: KqueueSelector
+2025-03-17 17:12:35,122 - main - INFO - Logging configured with level: DEBUG
+2025-03-17 17:19:34,470 - main - INFO - Logging configured with level: DEBUG
+2025-03-17 17:19:35,810 - main - INFO - Logging configured with level: DEBUG
+2025-03-17 17:19:35,853 - asyncio - DEBUG - Using selector: KqueueSelector
+2025-03-17 17:19:35,899 - main - INFO - Logging configured with level: DEBUG
+2025-03-17 17:20:54,394 - main - INFO - Logging configured with level: DEBUG
+2025-03-17 17:20:55,786 - main - INFO - Logging configured with level: DEBUG
+2025-03-17 21:42:26,048 - main - INFO - Logging configured with level: DEBUG
