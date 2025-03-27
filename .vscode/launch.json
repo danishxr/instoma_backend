@@ -8,7 +8,7 @@
             "name": "mainv1",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/mainv1.py",
+            "program": "${workspaceFolder}/routers/instagram_tools.py",
             "python": "/opt/anaconda3/envs/myplugin1/bin/python",
             "cwd": "${workspaceFolder}",
             "env": {
@@ -23,6 +23,18 @@
             "program": "${file}",
             "python": "/opt/anaconda3/envs/myplugin1/bin/python",
             "console": "integratedTerminal"
-        }
+        },
+        {
+            "name": "insta_agent",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/ai/agents/instagram_tools/insta_agent.py",
+            "python": "/opt/anaconda3/envs/myplugin1/bin/python",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "console": "integratedTerminal"
+        },
     ]
 }

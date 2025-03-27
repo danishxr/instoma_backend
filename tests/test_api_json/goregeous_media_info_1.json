@@ -1,0 +1,65 @@
+{
+    "pk": 3584576586102013955,
+    "id": "3584576586102013955_71319495248",
+    "code": "DG--WnEywAD",
+    "taken_at": datetime.datetime(2025,
+    3,
+    9,
+    15,
+    40, tzinfo=TzInfo(UTC)),
+    "media_type": 2,
+    "image_versions2": {
+        "candidates": [...
+        ],
+        "additional_candidates": {...
+        },
+        "scrubber_spritesheet_info_candidates": {...
+        }
+    },
+    "product_type": "clips",
+    "thumbnail_url": HttpUrl("https: //instagram.fblr2-3.fna.fbcdn.net/v/t51.2885-15/483505179_178582431723...HroDOdZPi3gMA&oe=67E8A6FA&_nc_sid=b41fef"),
+    "location": None,
+    "user": UserShort(pk="71319495248", username="gorgeousaimodel8", full_name="gorgeousaimodel",...profile_pic_url_hd=None, is_private=False),
+    "comment_count": 4,
+    "comments_disabled": False,
+    "commenting_disabled_for_viewer": False,
+    "like_count": 12,
+    "play_count": 106,
+    "has_liked": True,
+    "caption_text": "Hotter than the sun 👙 ☀️ \n#aimodels #aimodeloftheday #aimodeloftheweek #aimodelfashion #indianaibeautyqueen",
+    "accessibility_caption": None,
+    "usertags": [],
+    "sponsor_tags": [],
+    "video_url": HttpUrl("https://instagram.fblr2-3.fna.fbcdn.net/o1/v/t2/f2/m86/AQNX_PiLa86zm8Yq80QQW...i1ulEuPf1PGnXu1c1782gFbZNoWQ&oe=67E4BDCE"),
+    "view_count": 0,
+    "video_duration": 10.0,
+    "title": "",
+    "resources": [],
+    "clips_metadata": {
+        "breaking_content_info": None,
+        "breaking_creator_info": None,
+        "clips_creation_entry_point": "clips",
+        "featured_label": None,
+        "is_public_chat_welcome_video": False,
+        "is_shared_to_fb": False,
+        "professional_clips_upsell_type": 0,
+        "reels_on_the_rise_info": None,
+        "show_tips": None,
+        "achievements_info": {...
+        },
+        "additional_audio_info": {...
+        },
+        "asset_recommendation_info": None,
+        "audio_ranking_info": {...
+        },
+        "audio_type": "licensed_music",
+        "branded_content_tag_info": {...
+        },
+        "challenge_info": None,
+        "content_appreciation_info": {...
+        },
+        "contextual_highlight_info": None,
+        "cutout_sticker_info": [...
+        ], ...
+    }
+}
