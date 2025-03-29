@@ -4,9 +4,13 @@ This file is the entry point for the AI service.
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import Dict, Union, List
 import logging
-
+from pydantic import BaseModel
+from fastapi import HTTPException
+import base64
+import re
 from .model_factory import get_vision_model, configure_model_by_provider
 from .config import AI_CONFIG
+from .agents.instagram_tools.insta_agent import analyze_instagram_users
 
 # Set up logging
 logger = logging.getLogger("ai-router")
@@ -40,11 +44,6 @@ async def configure_model(provider: str, config: dict):
         return {"status": "error", "message": str(e)}
 
 
-from pydantic import BaseModel
-from fastapi import HTTPException
-import base64
-import re
-
 # Add request model
 class ImageRequest(BaseModel):
     imageUrl: str
@@ -67,6 +66,37 @@ async def generate_caption_hashtags(request: ImageRequest) -> List[Dict[str, Uni
     except Exception as e:
         logger.error(f"Caption generation failed: {str(e)}")
         raise HTTPException(status_code=500, detail="Caption generation error")
+
+# Define request model for Instagram user analysis
+class InstagramAnalysisRequest(BaseModel):
+    usernames: List[str]
+    max_iterations: int = 10
+    verbose: bool = False
+
+# Add new endpoint for Instagram user analysis
+@airouter.post("/analyze-instagram-users")
+async def analyze_users(request: InstagramAnalysisRequest) -> Dict[str, Union[bool, str, List]]:
+    """
+    Endpoint to analyze Instagram users and rank them based on metrics.
+    """
+    try:
+        logger.info(f"Analyzing Instagram users: {request.usernames}")
+        
+        # Call the analyze_instagram_users function from insta_agent.py
+        ranked_users = analyze_instagram_users(
+            usernames=request.usernames,
+            max_iterations=request.max_iterations,
+            verbose=request.verbose
+        )
+        
+        return {
+            "success": True,
+            "message": f"Successfully analyzed {len(ranked_users)} users",
+            "ranked_users": ranked_users
+        }
+    except Exception as e:
+        logger.error(f"Instagram user analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 # Helper function to validate image data
 def decode_base64_image(data_url: str) -> bytes:

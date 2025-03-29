@@ -8,7 +8,7 @@
             "name": "mainv1",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/routers/instagram_tools.py",
+            "program": "${workspaceFolder}/mainv1.py",
             "python": "/opt/anaconda3/envs/myplugin1/bin/python",
             "cwd": "${workspaceFolder}",
             "env": {

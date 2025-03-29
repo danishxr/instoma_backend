@@ -1,3 +1,4 @@
+# Update the import section to ensure proper imports when called from router
 import os
 import sys
 import json
@@ -5,10 +6,15 @@ import logging
 from typing import List, Dict, Any
 import statistics
 from google import genai
-from ai.models.google_gemini import GoogleGeminiModel
-# Fix import path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+
+# Fix import path - make it more robust for imports from different locations
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.abspath(os.path.join(current_dir, "../../../"))
+if backend_dir not in sys.path:
+    sys.path.append(backend_dir)
+
 from ai.agents.instagram_tools.instagram_tools import InstagramTools
+from ai.models.google_gemini import GoogleGeminiModel
 from ai.config import AI_CONFIG
 
 # Configure logging
@@ -105,8 +111,11 @@ def analyze_instagram_users(usernames: List[str], max_iterations: int = 10, verb
     query = f"""Analyze these Instagram users and rank them based on their metrics: {usernames}"""
 
     while iteration < max_iterations:
+        logger.info(
+            f"---------------------------- Iteration {iteration + 1} ----------------------------"
+        )
         if verbose:
-            print(f"\n--- Iteration {iteration + 1} ---")
+            print(f"\n---------------------------- Iteration {iteration + 1} ----------------------------")
 
         if last_response is None:
             current_query = query
@@ -191,4 +200,3 @@ if __name__ == "__main__":
         print(f"- Followers: {user.get('followers_count', 'N/A')}")
         print(f"- Engagement Rate: {user.get('engagement_rate', 'N/A')}%")
         print(f"- Media Count: {user.get('media_count', 'N/A')}")
-
