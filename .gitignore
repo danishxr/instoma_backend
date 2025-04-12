@@ -4,3 +4,7 @@ __pycache__
 ./test_images
 ./test_images/__pycache__
 ./tests/test_api_json
+yourcoolaibro_session.json
+/test_images
+api.log
+instagram_api.log
