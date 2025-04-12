@@ -188,11 +188,11 @@ def analyze_instagram_users(usernames: List[str], max_iterations: int = 10, verb
 # Main execution
 if __name__ == "__main__":
     # List of users to analyze
-    list_of_users = ["gorgeousaimodel8", "sillytechy"]
-    
+    list_of_users = ["sunnyleone", "beingsalmankhan"]
+
     # Run the analysis
     ranked_users = analyze_instagram_users(list_of_users, verbose=True)
-    
+
     # Print results
     print("\n# Final Instagram User Ranking Results")
     for i, user in enumerate(ranked_users, 1):
