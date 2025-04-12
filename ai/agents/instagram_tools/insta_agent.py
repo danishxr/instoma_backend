@@ -2,11 +2,13 @@
 import os
 import sys
 import json
+import re
 import logging
 from typing import List, Dict, Any
 import statistics
 from google import genai
-
+from pydantic import BaseModel
+from ..instagram_tools_models.instagram_card_profile_schema import InstagramCardProfileSchema
 # Fix import path - make it more robust for imports from different locations
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.abspath(os.path.join(current_dir, "../../../"))
@@ -35,6 +37,36 @@ def get_gemini_model():
     # Initialize and configure model
     model = GoogleGeminiModel()
     return model.configure(AI_CONFIG)
+
+
+# Function to verify the JSON output
+def verify_the_json_output(content: str) -> bool:
+    """The function checks the LLM metrics data and vaildates pydantic model"""
+    match = re.search(r"FINAL_ANSWER: (\[.*\])", content, re.DOTALL)
+
+    if match:
+        json_string = match.group(1)
+
+        instagram_users = json.loads(json_string)
+
+        # Take first element and check if it statisfies the pydantic model
+
+        try:
+            profile = InstagramCardProfileSchema.model_validate(instagram_users[0])
+
+            print("Validation successful using model_validate!")
+
+            return True
+
+        except ValidationError as e:
+
+            print(f"Validation error: {e}")
+
+            return True
+    else:
+
+        return False
+
 
 # Function caller to execute the selected tool
 def function_caller(func_name, params):
@@ -96,17 +128,54 @@ def analyze_instagram_users(usernames: List[str], max_iterations: int = 10, verb
     iteration_response = []
     users_metrics_list = []
 
-    system_prompt = """You are an Instagram analysis agent. Respond with EXACTLY ONE of these formats:
-    1. FUNCTION_CALL: function_name|input
-    2. FINAL_ANSWER: [ranked_users_json]
-    
-    where function_name is one of the following:
-    1. get_user_metrics(username) - Gets metrics for an Instagram user
-    2. calculate_user_score(metrics_json) - Calculates a score for a user based on metrics
-    3. rank_users(users_list_json) - Ranks users based on their scores
-    
-    Your goal is to analyze Instagram users, calculate their scores, and rank them.
-    DO NOT include multiple responses. Give ONE response at a time."""
+    system_prompt = """You are an Instagram analysis agent tasked with analyzing and ranking Instagram users based on their metrics.
+
+REASONING PROCESS:
+1. First, think step-by-step about what information you need to gather for each user
+2. For each username, retrieve their metrics using the appropriate function
+3. Once you have metrics, calculate a score for each user
+4. Finally, rank all users based on their scores
+5. Before providing a final answer, verify that all users have been analyzed and scored
+
+RESPONSE FORMAT:
+Respond with EXACTLY ONE of these formats, you cannot use any other format for response:
+1. THINKING: <your step-by-step reasoning about what to do next>
+2. FUNCTION_CALL: function_name|input
+3. VERIFICATION: <verification of results or error checking>
+4. FINAL_ANSWER: [ranked_users_json]
+
+AVAILABLE FUNCTIONS:
+1. get_user_metrics(username) - Gets metrics for an Instagram user
+   - Input: Instagram username as string
+   - Output: User metrics including followers, engagement rate, etc.
+   - Use when: You need to gather data about a specific Instagram user
+
+2. calculate_user_score(metrics_json) - Calculates a score for a user based on metrics
+   - Input: User metrics JSON object
+   - Output: Same metrics with an added "score" field
+   - Use when: You have user metrics and need to calculate their overall score
+
+3. rank_users(users_list_json) - Ranks users based on their scores
+   - Input: List of user metrics with scores
+   - Output: Same list sorted by score (highest first)
+   - Use when: You have scored all users and need to rank them
+
+ERROR HANDLING:
+- If a function returns an error, analyze the error message and decide whether to:
+  a) Retry with different parameters
+  b) Skip the problematic user and continue with others
+  c) Return a partial result with an explanation
+- Always check if the returned data makes sense before proceeding
+
+WORKFLOW GUIDELINES:
+1. Start by retrieving metrics for each user one by one
+2. After getting metrics for a user, calculate their score
+3. Once all users have metrics and scores, rank them
+4. Verify the results before providing the final answer
+5. If any step fails, explain the issue and suggest a workaround
+
+Remember to give ONE response at a time and wait for the result before proceeding to the next step.
+"""
 
     query = f"""Analyze these Instagram users and rank them based on their metrics: {usernames}"""
 
@@ -133,10 +202,70 @@ def analyze_instagram_users(usernames: List[str], max_iterations: int = 10, verb
         if verbose:
             print(f"LLM Response: {response_text}")
 
-        if "FUNCTION_CALL:" in response_text:
+        # Check if there's an embedded FUNCTION_CALL within the response
+        if "FUNCTION_CALL:" in response_text and not response_text.startswith("FUNCTION_CALL:"):
+            # Extract the FUNCTION_CALL part
+            function_call_part = response_text[response_text.find("FUNCTION_CALL:"):]
+            function_call_line = function_call_part.split("\n")[0].strip()
+
+            # Log the mixed format issue
+            logger.warning(f"Mixed response format detected. Extracting function call: {function_call_line}")
+            if verbose:
+                print(f"Mixed response format detected. Extracting function call: {function_call_line}")
+
+            # Process the thinking part if it exists
+            if response_text.startswith("THINKING:"):
+                thinking_content = response_text[:response_text.find("FUNCTION_CALL:")].replace("THINKING:", "").strip()
+                logger.info(f"Agent thinking: {thinking_content}")
+                if verbose:
+                    print(f"Agent thinking: {thinking_content}")
+
+                # Add thinking to iteration response
+                iteration_response.append(f"You thought: {thinking_content}")
+
+            # Update response_text to only contain the function call
+            response_text = function_call_line
+
+        # Handle THINKING response format
+        if response_text.startswith("THINKING:"):
+            thinking_content = response_text.replace("THINKING:", "").strip()
+            logger.info(f"Agent thinking: {thinking_content}")
+            if verbose:
+                print(f"Agent thinking: {thinking_content}")
+
+            # Add thinking to iteration response
+            iteration_response.append(f"You thought: {thinking_content}")
+            last_response = "thinking"
+            iteration += 1
+            continue
+
+        # Handle VERIFICATION response format
+        elif response_text.startswith("VERIFICATION:"):
+            verification_content = response_text.replace("VERIFICATION:", "").strip()
+            logger.info(f"Agent verification: {verification_content}")
+            # Add verification to iteration response
+            verification_result = verify_the_json_output(verification_content)
+
+            if verification_result:
+                logger.info(f"Verification successful: {verification_content}")
+                if verbose:
+                    print(f"Verification successful: {verification_content}")
+                iteration_response.append(f"You verified: {verification_content} + proceed with FINAL ANSWER" )
+                last_response = "verification"
+            else:
+                logger.error(f"Verification failed: {verification_content}")
+                if verbose:
+                    print(f"Verification failed: {verification_content}")
+
+            iteration += 1
+            continue
+
+        # Handle FUNCTION_CALL response format
+        elif response_text.startswith("FUNCTION_CALL:"):
             _, function_info = response_text.split(":", 1)
             func_name, params = [x.strip() for x in function_info.split("|", 1)]
 
+            logger.info(f"Calling function: {func_name} with params: {params}")
             iteration_result = function_caller(func_name, params)
 
             # If we're getting user metrics, add to our list
@@ -151,8 +280,11 @@ def analyze_instagram_users(usernames: List[str], max_iterations: int = 10, verb
             elif func_name == "rank_users":
                 users_metrics_list = iteration_result
 
-        # Check if it's the final answer
-        elif "FINAL_ANSWER:" in response_text:
+            last_response = iteration_result
+            iteration_response.append(f"In iteration {iteration + 1} you called {func_name} with {params} parameters, and the function returned {json.dumps(iteration_result)}.")
+
+        # Handle FINAL_ANSWER response format
+        elif response_text.startswith("FINAL_ANSWER:"):
             if verbose:
                 print("\n=== Agent Execution Complete ===")
             # Extract the final ranked list
@@ -168,21 +300,28 @@ def analyze_instagram_users(usernames: List[str], max_iterations: int = 10, verb
                         print(f"- Media Count: {user.get('media_count', 'N/A')}")
                 return ranked_users
             except json.JSONDecodeError:
+                logger.error("Could not parse final result as JSON")
                 if verbose:
                     print("Could not parse final result as JSON")
                 # If we can't parse the final answer, return the current list
                 return users_metrics_list
             break
+        else:
+            # Handle unexpected response format
+            logger.warning(f"Unexpected response format: {response_text}")
+            if verbose:
+                print(f"Unexpected response format: {response_text}")
 
-        if verbose:
+            # TODO To restric adding a response to the iteration_response list, we can remove the following line:
+            # iteration_response.append(f"You provided an unexpected response format. Please use one of the specified formats.")
+
+        if verbose and 'iteration_result' in locals():
             print(f"  Result: {iteration_result}")
-
-        last_response = iteration_result
-        iteration_response.append(f"In iteration {iteration + 1} you called {func_name} with {params} parameters, and the function returned {json.dumps(iteration_result)}.")
 
         iteration += 1
 
     # If we reach max iterations without a final answer, return the current list
+    logger.warning(f"Reached maximum iterations ({max_iterations}) without final answer")
     return users_metrics_list
 
 # Main execution
