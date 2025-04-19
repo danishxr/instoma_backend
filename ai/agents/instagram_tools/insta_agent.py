@@ -62,7 +62,7 @@ def verify_the_json_output(content: str) -> bool:
 
             print(f"Validation error: {e}")
 
-            return True
+            return False
     else:
 
         return False
