@@ -58,7 +58,7 @@ sequenceDiagram
     InstaAgent->>+Memory: 2. Initialize AgentMemory()
     Memory-->>-InstaAgent: memory object
     
-    rect rgb(200, 220, 240)
+    rect rgb(230, 240, 255)
         Note over InstaAgent,Action: Iteration Loop
         
         InstaAgent->>+Memory: 3. get_context_dict()
@@ -71,24 +71,34 @@ sequenceDiagram
         Decision-->>-InstaAgent: action_type, action_params
         
         alt action_type == "function_call" or action_type == "mixed"
-            InstaAgent->>+Action: 6a. execute_function(function_name, params)
-            Action-->>-InstaAgent: result
-            
-            alt function_name == "get_user_metrics"
-                InstaAgent->>+Memory: 7a. store_user_metrics(result)
-                Memory-->>-InstaAgent: updated memory
-            else function_name == "calculate_user_score"
-                InstaAgent->>+Memory: 7b. store_user_score(result["username"], result.get("score", 0))
-                Memory-->>-InstaAgent: updated memory
-            else function_name == "rank_users"
-                InstaAgent->>+Memory: 7c. update_users_list(result)
-                Memory-->>-InstaAgent: updated memory
+            rect rgb(255, 245, 225)
+                InstaAgent->>+Action: 6a. execute_function(function_name, params)
+                Action-->>-InstaAgent: result
+                
+                alt function_name == "get_user_metrics"
+                    rect rgb(240, 255, 240)
+                        InstaAgent->>+Memory: 7a. store_user_metrics(result)
+                        Memory-->>-InstaAgent: updated memory
+                    end
+                else function_name == "calculate_user_score"
+                    rect rgb(240, 240, 255)
+                        InstaAgent->>+Memory: 7b. store_user_score(result["username"], result.get("score", 0))
+                        Memory-->>-InstaAgent: updated memory
+                    end
+                else function_name == "rank_users"
+                    rect rgb(255, 240, 245)
+                        InstaAgent->>+Memory: 7c. update_users_list(result)
+                        Memory-->>-InstaAgent: updated memory
+                    end
+                end
             end
             
         else action_type == "final_answer"
-            InstaAgent->>+Action: 6b. format_final_results(ranked_users, verbose)
-            Action-->>-InstaAgent: formatted results
-            InstaAgent-->>Client: 7d. return ranked_users
+            rect rgb(245, 230, 230)
+                InstaAgent->>+Action: 6b. format_final_results(ranked_users, verbose)
+                Action-->>-InstaAgent: formatted results
+                InstaAgent-->>Client: 7d. return ranked_users
+            end
         end
         
         InstaAgent->>+Action: 8. format_iteration_response(iteration, action_type, action_params)
@@ -99,9 +109,11 @@ sequenceDiagram
     end
     
     alt max_iterations reached without final_answer
-        InstaAgent->>+Memory: 10. get_all_users_metrics()
-        Memory-->>-InstaAgent: all_users_metrics
-        InstaAgent-->>Client: 11. return all_users_metrics
+        rect rgb(255, 235, 235)
+            InstaAgent->>+Memory: 10. get_all_users_metrics()
+            Memory-->>-InstaAgent: all_users_metrics
+            InstaAgent-->>Client: 11. return all_users_metrics
+        end
     end
 ```
 ## Setup and Installation
