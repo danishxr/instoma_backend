@@ -7,9 +7,10 @@ It handles function calls, API interactions, and produces outputs.
 
 import logging
 import json
-from typing import Dict, Any, List, Callable, Optional
+from typing import Dict, Any, List, Callable, Optional, Union
 
 from .instagram_tools import InstagramTools
+from .models import UserMetrics, UserMetricsResult, UserScoreResult, RankedUsersResult
 
 # Configure logging
 logger = logging.getLogger("insta-action")
@@ -78,88 +79,90 @@ def execute_function(function_name: str, params: Any) -> Dict[str, Any]:
     
     try:
         if function_name == "get_user_metrics":
-            return insta_tools.user_info_by_username(params)
+            # Handle string or dict parameters
+            username = params if isinstance(params, str) else params.get("username")
+            result = insta_tools.user_info_by_username(username)
+            return result
+            
         elif function_name == "calculate_user_score":
-            return calculate_user_score(json.loads(params))
+            # Handle string or dict parameters
+            metrics = json.loads(params) if isinstance(params, str) else params
+            result = calculate_user_score(metrics)
+            return result
+            
         elif function_name == "rank_users":
-            return rank_users(json.loads(params))
+            # Handle string or dict parameters
+            users_list = json.loads(params) if isinstance(params, str) else params
+            result = rank_users(users_list)
+            return result
+            
         else:
-            error_msg = f"Unknown function {function_name}"
-            logger.error(error_msg)
-            return {"error": error_msg}
+            logger.error(f"Unknown function: {function_name}")
+            return {"error": f"Unknown function: {function_name}"}
+            
     except Exception as e:
-        error_msg = f"Error executing {function_name}: {str(e)}"
-        logger.error(error_msg)
-        return {"error": error_msg}
+        logger.error(f"Error executing function {function_name}: {str(e)}")
+        return {"error": str(e), "function": function_name}
 
-def format_iteration_response(
-    iteration: int, 
-    action_type: str, 
-    action_result: Any
-) -> str:
+def format_iteration_response(iteration: int, action_type: str, action_params: Dict[str, Any]) -> str:
     """
     Format the response for an iteration
     
     Args:
-        iteration: Current iteration number
-        action_type: Type of action performed
-        action_result: Result of the action
+        iteration: Iteration number
+        action_type: Type of action taken
+        action_params: Parameters of the action
         
     Returns:
         Formatted response string
     """
-    if action_type == "thinking":
-        return f"You thought: {action_result.get('content')}"
-    
-    elif action_type == "function_call":
-        function = action_result.get("function")
-        params = action_result.get("params")
-        result = action_result.get("result", {})
-        return f"In iteration {iteration} you called {function} with {params} parameters, and the function returned {json.dumps(result)}."
-    
-    elif action_type == "verification_success":
-        return f"You verified: {action_result.get('content')} + proceed with FINAL ANSWER"
-    
-    elif action_type == "verification_failed":
-        return f"Verification failed: {action_result.get('content')}"
-    
+    if action_type == "function_call":
+        function_name = action_params.get("function")
+        result = action_params.get("result", {})
+        
+        if "error" in result:
+            return f"Iteration {iteration}: Called {function_name} but got error: {result['error']}"
+        else:
+            return f"Iteration {iteration}: Called {function_name} successfully"
+            
     elif action_type == "mixed":
-        thinking = action_result.get("thinking")
-        function = action_result.get("function")
-        params = action_result.get("params")
-        result = action_result.get("result", {})
-        return f"You thought: {thinking}\nIn iteration {iteration} you called {function} with {params} parameters, and the function returned {json.dumps(result)}."
-    
-    elif action_type == "error":
-        return f"Error occurred: {action_result.get('message')}"
-    
+        function_name = action_params.get("function")
+        result = action_params.get("result", {})
+        
+        if "error" in result:
+            return f"Iteration {iteration}: Thought about next steps and called {function_name} but got error: {result['error']}"
+        else:
+            return f"Iteration {iteration}: Thought about next steps and called {function_name} successfully"
+            
+    elif action_type == "thinking":
+        return f"Iteration {iteration}: Thinking about next steps"
+        
+    elif action_type == "verification_success":
+        return f"Iteration {iteration}: Verified results successfully"
+        
+    elif action_type == "verification_failed":
+        return f"Iteration {iteration}: Verification failed"
+        
+    elif action_type == "final_answer":
+        return f"Iteration {iteration}: Provided final answer with ranked users"
+        
     else:
-        return f"Unknown action type: {action_type}"
+        return f"Iteration {iteration}: {action_type}"
 
-def format_final_results(ranked_users: List[Dict[str, Any]], verbose: bool = False) -> Optional[str]:
+def format_final_results(ranked_users: List[Dict[str, Any]], verbose: bool = False) -> None:
     """
-    Format the final results for display
+    Format and display the final results
     
     Args:
         ranked_users: List of ranked users
         verbose: Whether to print detailed output
-        
-    Returns:
-        Formatted results string if verbose is True, None otherwise
     """
     if not verbose:
-        return None
+        return
         
-    output = "\n=== Agent Execution Complete ===\n"
-    output += "\n# Instagram User Ranking Results\n"
-    
+    print("\n# Final Instagram User Ranking Results")
     for i, user in enumerate(ranked_users, 1):
-        output += f"\n## {i}. {user['username']} (Score: {user.get('score', 'N/A')})\n"
-        output += f"- Followers: {user.get('followers_count', 'N/A')}\n"
-        output += f"- Engagement Rate: {user.get('engagement_rate', 'N/A')}%\n"
-        output += f"- Media Count: {user.get('media_count', 'N/A')}\n"
-    
-    if verbose:
-        print(output)
-    
-    return output
+        print(f"\n## {i}. {user['username']} (Score: {user.get('score', 'N/A')})")
+        print(f"- Followers: {user.get('followers_count', 'N/A')}")
+        print(f"- Engagement Rate: {user.get('engagement_rate', 'N/A')}%")
+        print(f"- Media Count: {user.get('media_count', 'N/A')}")

@@ -70,7 +70,7 @@ async def generate_caption_hashtags(request: ImageRequest) -> List[Dict[str, Uni
 # Define request model for Instagram user analysis
 class InstagramAnalysisRequest(BaseModel):
     usernames: List[str]
-    max_iterations: int = 10
+    max_iterations: int = 20
     verbose: bool = False
 
 # Add new endpoint for Instagram user analysis
@@ -85,7 +85,7 @@ async def analyze_users(request: InstagramAnalysisRequest) -> Dict[str, Union[bo
         # Call the analyze_instagram_users function from insta_agent.py
         ranked_users = analyze_instagram_users(
             usernames=request.usernames,
-            max_iterations=request.max_iterations,
+            max_iterations=20,
             verbose=request.verbose
         )
         

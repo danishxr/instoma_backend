@@ -8,9 +8,24 @@ It contains the reasoning logic for the agent.
 import logging
 import re
 import json
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional, cast
 
 from ..instagram_tools_models.instagram_card_profile_schema import InstagramCardProfileSchema
+from .models import (
+    PerceptionResponse,
+    ThinkingResponse,
+    FunctionCallResponse,
+    VerificationResponse,
+    FinalAnswerResponse,
+    MixedResponse,
+    ErrorResponse,
+    UnknownResponse,
+    DecisionOutput,
+    ThinkingActionParams,
+    FunctionCallActionParams,
+    VerificationActionParams,
+    FinalAnswerActionParams
+)
 
 # Configure logging
 logger = logging.getLogger("insta-decision")
@@ -48,108 +63,126 @@ def verify_json_output(content: str) -> bool:
         logger.warning("No JSON found in content")
         return False
 
-def determine_next_action(
-    parsed_response: Dict[str, Any], 
-    memory: Any, 
-    all_usernames: List[str]
-) -> Tuple[str, Optional[Dict[str, Any]]]:
+def determine_next_action(perception_response: PerceptionResponse, memory: Any, usernames: List[str]) -> DecisionOutput:
     """
-    Determine the next action based on the parsed response and memory
+    Determine the next action based on the perception response and memory
     
     Args:
-        parsed_response: The parsed response from the perception layer
-        memory: The agent's memory
-        all_usernames: List of all usernames to process
+        perception_response: Response from the perception layer
+        memory: Agent's memory
+        usernames: List of usernames to process
         
     Returns:
-        Tuple of (action_type, action_params)
+        Decision output with action type and parameters
     """
-    response_type = parsed_response.get("type")
-    
-    # Handle thinking responses
-    if response_type == "thinking":
-        logger.info(f"Agent thinking: {parsed_response.get('content')}")
-        return "thinking", {"content": parsed_response.get("content")}
-    
-    # Handle verification responses
-    elif response_type == "verification":
-        verification_content = parsed_response.get("content")
-        verification_result = verify_json_output(verification_content)
+    # Handle different response types
+    if perception_response.type == "function_call":
+        function_name = perception_response.function
+        params = perception_response.params
         
-        if verification_result:
-            logger.info(f"Verification successful: {verification_content}")
-            return "verification_success", {"content": verification_content}
-        else:
-            logger.error(f"Verification failed: {verification_content}")
-            return "verification_failed", {"content": verification_content}
-    
-    # Handle function call responses
-    elif response_type == "function_call":
-        func_name = parsed_response.get("function")
-        params = parsed_response.get("params")
+        # Check if the function call is appropriate based on current state
+        if function_name == "get_user_metrics":
+            # Extract username from params
+            username = params if isinstance(params, str) else params.get("username", "")
+            
+            # Check if we already have metrics for this user - direct memory access
+            if username in memory.processed_usernames:
+                logger.warning(f"LLM tried to get metrics for {username} again")
+                
+                # Get the user metrics
+                user_metrics = memory.get_user_metrics(username)
+                
+                # If the user doesn't have a score yet, redirect to calculate_user_score
+                if username not in memory.scored_users and user_metrics:
+                    logger.info(f"Redirecting to calculate_user_score for {username}")
+                    return DecisionOutput(
+                        action_type="function_call",
+                        action_params=FunctionCallActionParams(
+                            function="calculate_user_score",
+                            params=user_metrics
+                        )
+                    )
+                else:
+                    logger.info(f"User {username} already has metrics and score, skipping")
+                    return DecisionOutput(
+                        action_type="thinking",
+                        action_params=ThinkingActionParams(
+                            content=f"User {username} already has metrics and score. Let's move on to the next step."
+                        )
+                    )
         
-        logger.info(f"Function call: {func_name} with params: {params}")
-        return "function_call", {"function": func_name, "params": params}
+        # Continue with normal function call
+        return DecisionOutput(
+            action_type="function_call",
+            action_params=FunctionCallActionParams(
+                function=function_name,
+                params=params
+            )
+        )
     
-    # Handle final answer responses
-    elif response_type == "final_answer":
-        final_result = parsed_response.get("content")
+    elif perception_response.type == "thinking":
+        return DecisionOutput(
+            action_type="thinking",
+            action_params=ThinkingActionParams(
+                content=perception_response.content
+            )
+        )
+        
+    elif perception_response.type == "verification":
+        # Check if verification is successful
+        verification_success = verify_json_output(perception_response.content)
+        
+        return DecisionOutput(
+            action_type="verification_success" if verification_success else "verification_failed",
+            action_params=VerificationActionParams(
+                content=perception_response.content,
+                success=verification_success
+            )
+        )
+        
+    elif perception_response.type == "final_answer":
+        # Try to extract JSON from the content
         try:
-            ranked_users = json.loads(final_result)
-            logger.info(f"Final answer with {len(ranked_users)} ranked users")
-            return "final_answer", {"ranked_users": ranked_users}
+            # Handle potential backticks in the content
+            content = perception_response.content
+            if content.startswith('`') and content.endswith('`'):
+                content = content[1:-1]
+            
+            ranked_users = json.loads(content)
+            return DecisionOutput(
+                action_type="final_answer",
+                action_params=FinalAnswerActionParams(
+                    content=perception_response.content,
+                    ranked_users=ranked_users
+                )
+            )
         except json.JSONDecodeError:
-            logger.error("Could not parse final result as JSON")
-            return "error", {"message": "Could not parse final result as JSON"}
-    
-    # Handle mixed format responses
-    elif response_type == "mixed":
-        thinking = parsed_response.get("thinking")
-        function_call = parsed_response.get("function_call")
+            logger.error("Failed to parse JSON in final answer")
+            return DecisionOutput(
+                action_type="verification_failed",
+                action_params=VerificationActionParams(
+                    content=perception_response.content,
+                    success=False
+                )
+            )
+            
+    elif perception_response.type == "mixed":
+        # Handle mixed response (thinking + function call)
+        return DecisionOutput(
+            action_type="mixed",
+            action_params=FunctionCallActionParams(
+                function=perception_response.function_call.split("|")[0].strip(),
+                params=perception_response.function_call.split("|")[1].strip() if "|" in perception_response.function_call else "",
+                thinking=perception_response.thinking
+            )
+        )
         
-        logger.info(f"Mixed response - thinking: {thinking}")
-        logger.info(f"Mixed response - function call: {function_call}")
-        
-        # Extract function name and params
-        func_parts = [x.strip() for x in function_call.split("|", 1)]
-        func_name = func_parts[0]
-        params = func_parts[1] if len(func_parts) > 1 else ""
-        
-        return "mixed", {
-            "thinking": thinking,
-            "function": func_name,
-            "params": params
-        }
-    
-    # Handle unknown or error responses
     else:
-        logger.warning(f"Unknown response type: {response_type}")
-        return "unknown", {"content": parsed_response.get("content")}
-
-def evaluate_progress(memory: Any, all_usernames: List[str]) -> Dict[str, Any]:
-    """
-    Evaluate the current progress of the agent
-    
-    Args:
-        memory: The agent's memory
-        all_usernames: List of all usernames to process
-        
-    Returns:
-        Dictionary with progress information
-    """
-    users_metrics = memory.get_all_users_metrics()
-    unprocessed = memory.get_unprocessed_usernames(all_usernames)
-    unscored = memory.get_unscored_users()
-    
-    all_processed = memory.all_users_processed(all_usernames)
-    all_scored = memory.all_users_scored()
-    
-    return {
-        "total_users": len(all_usernames),
-        "processed_users": len(users_metrics),
-        "unprocessed_users": unprocessed,
-        "unscored_users": [u.get("username") for u in unscored],
-        "all_processed": all_processed,
-        "all_scored": all_scored,
-        "ready_for_ranking": all_processed and all_scored
-    }
+        # Handle unknown response type
+        logger.warning(f"Unknown response type: {perception_response.type}")
+        return DecisionOutput(
+            action_type="thinking",
+            action_params=ThinkingActionParams(
+                content=f"I received an unknown response type: {perception_response.type}. Let me try again."
+            )
+        )

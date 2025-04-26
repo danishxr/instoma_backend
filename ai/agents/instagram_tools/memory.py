@@ -6,7 +6,8 @@ that may be relevant for future reasoning.
 """
 
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
+from .models import UserMetrics, MemoryState, MemoryContext
 
 # Configure logging
 logger = logging.getLogger("insta-memory")
@@ -18,10 +19,11 @@ class AgentMemory:
     
     def __init__(self):
         """Initialize the memory with empty collections"""
-        self.users_metrics = []  # Store metrics for each user
-        self.iteration_responses = []  # Store responses from each iteration
-        self.processed_usernames = set()  # Track which usernames have been processed
-        self.scored_users = set()  # Track which users have been scored
+        self.users_metrics: List[Dict[str, Any]] = []  # Store metrics for each user
+        self.iteration_responses: List[str] = []  # Store responses from each iteration
+        self.processed_usernames: Set[str] = set()  # Track which usernames have been processed
+        self.scored_users: Set[str] = set()  # Track which users have been scored
+        self.ranking_completed: bool = False  # Track if ranking has been completed
         
     def store_user_metrics(self, metrics: Dict[str, Any]) -> None:
         """
@@ -83,6 +85,52 @@ class AgentMemory:
             response: The response string
         """
         self.iteration_responses.append(response)
+        
+    def get_context_dict(self) -> MemoryContext:
+        """
+        Get a dictionary representation of the memory for context
+        
+        Returns:
+            Dictionary with memory state
+        """
+        return MemoryContext(
+            users_metrics_list=self.users_metrics,
+            iteration_responses=self.iteration_responses,
+            processed_usernames=list(self.processed_usernames),
+            scored_users=list(self.scored_users)
+        )
+        
+    def get_all_users_metrics(self) -> List[Dict[str, Any]]:
+        """
+        Get all user metrics
+        
+        Returns:
+            List of all user metrics
+        """
+        return self.users_metrics
+        
+    def get_memory_state(self) -> MemoryState:
+        """
+        Get the complete memory state as a Pydantic model
+        
+        Returns:
+            MemoryState object
+        """
+        # Convert dictionaries to UserMetrics models
+        user_metrics = []
+        for metrics_dict in self.users_metrics:
+            try:
+                user_metrics.append(UserMetrics(**metrics_dict))
+            except Exception as e:
+                logger.warning(f"Failed to convert metrics to UserMetrics model: {e}")
+                # Keep the original dict if conversion fails
+                
+        return MemoryState(
+            users_metrics=user_metrics if user_metrics else self.users_metrics,
+            iteration_responses=self.iteration_responses,
+            processed_usernames=list(self.processed_usernames),
+            scored_users=list(self.scored_users)
+        )
         
     def get_user_metrics(self, username: str) -> Optional[Dict[str, Any]]:
         """
