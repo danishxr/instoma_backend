@@ -17,6 +17,7 @@ This project provides a FastAPI-based backend service that combines AI vision mo
   - Ollama integration
 - **Instagram API Integration**: Post content directly to Instagram
 - **Flexible Configuration**: Switch between different AI providers easily
+- 
 
 ## Architecture
 
